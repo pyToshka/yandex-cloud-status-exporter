@@ -1,0 +1,36 @@
+services:
+  exporter:
+    build:
+      context: .
+    image: yc-status-exporter
+    restart: always
+    working_dir: /app
+    ports:
+      - 5000:5000
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    user: "65534"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - exporter
+    volumes:
+      - prometheus:/prometheus
+      - ./config/prometheus/:/etc/prometheus/
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+        - "3000:3000"
+    env_file:
+      - ./config/grafana/grafana.config
+volumes:
+    prometheus: {}
+    grafana_data: {}

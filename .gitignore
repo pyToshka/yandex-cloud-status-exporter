@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*$py.class
+data
+api-key.yml
+.env
+.github
+tmp_*.py
+.idea/
+tmp
+.pytest_cache
+.tfcache
