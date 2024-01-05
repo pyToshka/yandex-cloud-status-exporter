@@ -18,7 +18,7 @@ install-dev-requirements: ## Install requirements from requirements-dev.txt
 run-local: ## Run docker compose
 	docker compose up -d --build
 
-run-tests: ## Run pytests
+run-tests: ## Run pytest
 	pytest  -v --capture=sys -x --tb=long
 
 stop-local: ## Stop docker compose

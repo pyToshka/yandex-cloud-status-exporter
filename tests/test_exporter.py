@@ -1,16 +1,7 @@
 import json
 from collections.abc import Mapping
 
-import pathlib
-
-import pytest
-
 from app import cache
-
-
-def load_full(json_path):
-    with open(json_path) as f:
-        return json.load(f)
 
 
 def test_home():

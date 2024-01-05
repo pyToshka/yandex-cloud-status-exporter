@@ -41,7 +41,9 @@ health = HealthCheck()
 environment_dump = EnvironmentDump(include_process=False)
 app.add_url_rule("/healthcheck", "healthcheck", view_func=lambda: health.run())
 app.add_url_rule(
-    "/environment", "environment", view_func=lambda: environment_dump.run()
+    "/environment",
+    "environment",
+    view_func=lambda: environment_dump.run(),
 )
 
 

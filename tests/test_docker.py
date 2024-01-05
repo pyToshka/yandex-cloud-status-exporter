@@ -1,3 +1,8 @@
+import os
+
+import pytest
+
+
 def test_python_version(host):
     python = "/usr/bin/python3.9"
     python_version = host.command(f"{python} -V").stdout.strip()
@@ -43,6 +48,7 @@ def tests_system_info(host):
     assert host.system_info.arch == "x86_64"
 
 
+@pytest.mark.skipif("RUNALL" not in os.environ, reason="takes too long")
 def test_google_access(host):
     google = host.addr("google.com")
     assert google.is_resolvable is True
@@ -51,6 +57,7 @@ def test_google_access(host):
     assert google.port(45454).is_reachable is False
 
 
+@pytest.mark.skipif("RUNALL" not in os.environ, reason="takes too long")
 def test_yandex_access(host):
     google = host.addr("status.cloud.yandex.ru")
     assert google.is_resolvable is True
