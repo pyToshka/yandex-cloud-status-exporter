@@ -70,7 +70,7 @@ class YandexCloudCollectorAll(CollectorRegistry):
             "Yandex Cloud Active Incidents",
             labels=["id", "product", "comments", "last_update", "type"],
         )
-        last_incidents = InfoMetricFamily(
+        last_incidents = GaugeMetricFamily(
             "yc_last_incidents",
             "Yandex Cloud Services last incidents",
             labels=["service_name", "end_date"],
@@ -88,13 +88,17 @@ class YandexCloudCollectorAll(CollectorRegistry):
         for service in get_yc_status:
             if service["incidents"]:
                 for incident in service["incidents"]:
-                    last_incidents.add_metric(
-                        labels=[
-                            service["slug"].replace("-", "_"),
-                            incident.get("endDate"),
-                        ],
-                        value={"title": incident.get("title")},
-                    )
+                    if not incident.get("endDate"):
+                        pass
+                    else:
+                        end_date = incident.get("endDate")
+                        last_incidents.add_metric(
+                            labels=[
+                                service["slug"].replace("-", "_"),
+                                end_date,
+                            ],
+                            value=incident.get("title"),
+                        )
 
                     incident_severity = self.severity_handler(incident)
                     if incident_severity == 0:
