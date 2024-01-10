@@ -11,7 +11,6 @@ from healthcheck import HealthCheck, EnvironmentDump
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client.metrics_core import (
     GaugeMetricFamily,
-    InfoMetricFamily,
 )
 
 config = {
@@ -88,9 +87,7 @@ class YandexCloudCollectorAll(CollectorRegistry):
         for service in get_yc_status:
             if service["incidents"]:
                 for incident in service["incidents"]:
-                    if not incident.get("endDate"):
-                        pass
-                    else:
+                    if incident.get("endDate"):
                         end_date = incident.get("endDate")
                         last_incidents.add_metric(
                             labels=[
