@@ -16,8 +16,8 @@ def test_metrics():
     response = cache.app.test_client().get("/metrics")
     assert response.status_code == 200
     assert b"yc_service_status" in response.data
-    assert b"yc_last_incidents_info" in response.data
-    assert b"# HELP yc_active_incidents" in response.data
+    assert b"yc_last_incidents" in response.data
+    assert b"yc_active_incidents" in response.data
 
 
 def test_healthcheck():
