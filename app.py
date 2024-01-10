@@ -11,7 +11,6 @@ from healthcheck import HealthCheck, EnvironmentDump
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client.metrics_core import (
     GaugeMetricFamily,
-    InfoMetricFamily,
 )
 
 config = {
@@ -41,7 +40,9 @@ health = HealthCheck()
 environment_dump = EnvironmentDump(include_process=False)
 app.add_url_rule("/healthcheck", "healthcheck", view_func=lambda: health.run())
 app.add_url_rule(
-    "/environment", "environment", view_func=lambda: environment_dump.run()
+    "/environment",
+    "environment",
+    view_func=lambda: environment_dump.run(),
 )
 
 
@@ -68,15 +69,19 @@ class YandexCloudCollectorAll(CollectorRegistry):
             "Yandex Cloud Active Incidents",
             labels=["id", "product", "comments", "last_update", "type"],
         )
-        last_incidents = InfoMetricFamily(
+        last_incidents = GaugeMetricFamily(
             "yc_last_incidents",
             "Yandex Cloud Services last incidents",
-            labels=["service_name", "end_date"],
+            labels=["id", "product", "comments", "last_update", "type"],
         )
         for service in get_yc_status:
             if not service["incidents"]:
                 service_status = 1
-            elif service["incidents"] and not service["status"] != "resolved":
+            elif (
+                service["incidents"]
+                or not service["status"] != "resolved"
+                and not service["endDate"]
+            ):
                 service_status = 0
             metric.add_metric(
                 value=service_status,
@@ -84,16 +89,39 @@ class YandexCloudCollectorAll(CollectorRegistry):
             )
 
         for service in get_yc_status:
+
             if service["incidents"]:
                 for incident in service["incidents"]:
-                    last_incidents.add_metric(
-                        labels=[
-                            service["slug"].replace("-", "_"),
-                            incident.get("endDate"),
-                        ],
-                        value={"title": incident.get("title")},
-                    )
-
+                    if incident.get("endDate"):
+                        end_date = incident.get("endDate")
+                        last_incidents.add_metric(
+                            labels=[
+                                service["slug"].replace("-", "_"),
+                                end_date,
+                            ],
+                            value=incident.get("title"),
+                        )
+                    else:
+                        incident_severity = self.severity_handler(incident)
+                        get_incident = requests.get(
+                            "https://status.cloud.yandex.ru/api/incidents", timeout=15
+                        ).json()
+                        for item in get_incident.get("items"):
+                            if item.get("id") == incident.get("id"):
+                                content = html_tags.sub(
+                                    "", item.get("comments")[0].get("content")
+                                ).strip()
+                                content_type = item.get("comments")[0].get("type")
+                        last_incidents.add_metric(
+                            [
+                                str(incident.get("id")),
+                                service["slug"].replace("-", "_"),
+                                content,
+                                "Active",
+                                content_type,
+                            ],
+                            incident_severity,
+                        )
                     incident_severity = self.severity_handler(incident)
                     if incident_severity == 0:
                         active_incidents.add_metric(
@@ -135,9 +163,9 @@ class YandexCloudCollectorAll(CollectorRegistry):
     def severity_handler(incident):
         if incident.get("status") == "resolved":
             return 0
-        elif incident.get("levelId") == "1":
+        elif incident.get("levelId") == 1:
             return 1
-        elif incident.get("levelId") == "2":
+        elif incident.get("levelId") == 2:
             return 2
         else:
             return 3
